@@ -31,40 +31,40 @@ func main() {
 }
 
 type fanWriter struct {
-	outputs []io.Writer
+	writers []io.Writer
 }
 
-func (w *fanWriter) add(ww io.Writer) {
-	w.outputs = append(w.outputs, ww)
+func (fw *fanWriter) add(w io.Writer) {
+	fw.writers = append(fw.writers, w)
 }
 
-func (w *fanWriter) Write(p []byte) (n int, err error) {
-	for _, out := range w.outputs {
-		out.Write(p)
+func (fw *fanWriter) Write(p []byte) (n int, err error) {
+	for _, w := range fw.writers {
+		w.Write(p)
 	}
 	return len(p), nil
 }
 
 func calc(filename string) {
-	f, err := os.Open(filename)
+	reader, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Can not open file: ", filename)
 		return
 	}
-	defer f.Close()
+	defer reader.Close()
 
-	writers := &fanWriter{}
+	fw := &fanWriter{}
 
 	hMD5 := md5.New()
-	writers.add(hMD5)
+	fw.add(hMD5)
 
 	hSHA1 := sha1.New()
-	writers.add(hSHA1)
+	fw.add(hSHA1)
 
 	hSHA256 := sha256.New()
-	writers.add(hSHA256)
+	fw.add(hSHA256)
 
-	if _, err := io.Copy(writers, f); err != nil {
+	if _, err := io.Copy(fw, reader); err != nil {
 		fmt.Println("Can not read file: ", filename)
 		return
 	}
